@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Nexus Board</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+  <header>
+    <h1>Nexus Board</h1>
+    <div class="header-actions">
+      <button class="btn-theme" id="theme-toggle" onclick="toggleTheme()">☀ Light</button>
+      <button class="btn-open" onclick="document.getElementById('task-modal').style.display='flex'">+ New Task</button>
+    </div>
+  </header>
+
+  <!-- Stats bar -->
+  <div class="stats-bar">
+    <div class="stat"><span class="stat-num">{{ stats.total }}</span><span class="stat-label">Total</span></div>
+    <div class="stat"><span class="stat-num todo-col">{{ stats.todo }}</span><span class="stat-label">Todo</span></div>
+    <div class="stat"><span class="stat-num progress-col">{{ stats.in_progress }}</span><span class="stat-label">In Progress</span></div>
+    <div class="stat"><span class="stat-num done-col">{{ stats.done }}</span><span class="stat-label">Done</span></div>
+    <div class="stat"><span class="stat-num high-col">{{ stats.high }}</span><span class="stat-label">High Priority</span></div>
+    {% if stats.total > 0 %}
+    <div class="stat progress-bar-stat">
+      <span class="stat-label">Completion</span>
+      <div class="progress-track">
+        <div class="progress-fill" style="width: {{ ((stats.done / stats.total) * 100) | round | int }}%"></div>
+      </div>
+      <span class="stat-num">{{ ((stats.done / stats.total) * 100) | round | int }}%</span>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Search & filter bar -->
+  <form class="filter-bar" method="GET" action="/">
+    <input type="text" name="search" placeholder="Search tasks..." value="{{ search }}"/>
+    <select name="priority">
+      <option value="">All priorities</option>
+      <option value="high" {% if priority == 'high' %}selected{% endif %}>High</option>
+      <option value="medium" {% if priority == 'medium' %}selected{% endif %}>Medium</option>
+      <option value="low" {% if priority == 'low' %}selected{% endif %}>Low</option>
+    </select>
+    <button type="submit">Filter</button>
+    {% if search or priority %}
+    <a href="/" class="clear-link">Clear</a>
+    {% endif %}
+  </form>
+
+  <!-- Create task modal -->
+  <div id="task-modal" class="modal-overlay">
+    <div class="modal">
+      <h2>Create a task</h2>
+      <form action="/tasks/create" method="POST">
+        <label>Title</label>
+        <input type="text" name="title" required placeholder="What needs to be done?"/>
+        <label>Description</label>
+        <textarea name="description" placeholder="Optional details..."></textarea>
+        <label>Priority</label>
+        <select name="priority">
+          <option value="low">Low</option>
+          <option value="medium" selected>Medium</option>
+          <option value="high">High</option>
+        </select>
+        <label>Due Date</label>
+        <input type="date" name="due_date"/>
+        <div class="modal-actions">
+          <button type="button" onclick="document.getElementById('task-modal').style.display='none'">Cancel</button>
+          <button type="submit" class="btn-primary">Create</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit task modal -->
+  <div id="edit-modal" class="modal-overlay">
+    <div class="modal">
+      <h2>Edit task</h2>
+      <form id="edit-form" method="POST">
+        <label>Title</label>
+        <input type="text" name="title" id="edit-title" required/>
+        <label>Description</label>
+        <textarea name="description" id="edit-description"></textarea>
+        <label>Priority</label>
+        <select name="priority" id="edit-priority">
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+        </select>
+        <label>Due Date</label>
+        <input type="date" name="due_date" id="edit-due-date"/>
+        <div class="modal-actions">
+          <button type="button" onclick="document.getElementById('edit-modal').style.display='none'">Cancel</button>
+          <button type="submit" class="btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Board -->
+  <main class="board">
+
+    <!-- Todo -->
+    <div class="column">
+      <div class="column-header todo-header">
+        <span>Todo</span>
+        <span class="count">{{ todo|length }}</span>
+      </div>
+      {% for task in todo %}
+      <div class="card priority-{{ task.priority }}">
+        <div class="card-top">
+          <span class="badge badge-{{ task.priority }}">{{ task.priority }}</span>
+          {% if task.due_date %}<span class="due-date">Due {{ task.due_date }}</span>{% endif %}
+        </div>
+        <p class="card-title">{{ task.title }}</p>
+        {% if task.description %}<p class="card-desc">{{ task.description }}</p>{% endif %}
+        <div class="card-actions">
+          <form action="/tasks/{{ task.id }}/status" method="POST">
+            <input type="hidden" name="status" value="in_progress"/>
+            <button class="btn-move">In Progress →</button>
+          </form>
+          <button class="btn-edit" onclick="openEdit('{{ task.id }}','{{ task.title }}',`{{ task.description }}`, '{{ task.priority }}','{{ task.due_date or '' }}')">Edit</button>
+          <form action="/tasks/{{ task.id }}/delete" method="POST">
+            <button class="btn-delete">Delete</button>
+          </form>
+        </div>
+      </div>
+      {% else %}<p class="empty">No tasks yet</p>
+      {% endfor %}
+    </div>
+
+    <!-- In Progress -->
+    <div class="column">
+      <div class="column-header progress-header">
+        <span>In Progress</span>
+        <span class="count">{{ in_progress|length }}</span>
+      </div>
+      {% for task in in_progress %}
+      <div class="card priority-{{ task.priority }}">
+        <div class="card-top">
+          <span class="badge badge-{{ task.priority }}">{{ task.priority }}</span>
+          {% if task.due_date %}<span class="due-date">Due {{ task.due_date }}</span>{% endif %}
+        </div>
+        <p class="card-title">{{ task.title }}</p>
+        {% if task.description %}<p class="card-desc">{{ task.description }}</p>{% endif %}
+        <div class="card-actions">
+          <form action="/tasks/{{ task.id }}/status" method="POST">
+            <input type="hidden" name="status" value="done"/>
+            <button class="btn-move">Done →</button>
+          </form>
+          <form action="/tasks/{{ task.id }}/status" method="POST">
+            <input type="hidden" name="status" value="todo"/>
+            <button class="btn-back">← Back</button>
+          </form>
+          <button class="btn-edit" onclick="openEdit('{{ task.id }}','{{ task.title }}',`{{ task.description }}`,'{{ task.priority }}','{{ task.due_date or '' }}')">Edit</button>
+          <form action="/tasks/{{ task.id }}/delete" method="POST">
+            <button class="btn-delete">Delete</button>
+          </form>
+        </div>
+      </div>
+      {% else %}<p class="empty">Nothing in progress</p>
+      {% endfor %}
+    </div>
+
+    <!-- Done -->
+    <div class="column">
+      <div class="column-header done-header">
+        <span>Done</span>
+        <span class="count">{{ done|length }}</span>
+      </div>
+      {% for task in done %}
+      <div class="card priority-{{ task.priority }}">
+        <div class="card-top">
+          <span class="badge badge-{{ task.priority }}">{{ task.priority }}</span>
+          {% if task.due_date %}<span class="due-date">Due {{ task.due_date }}</span>{% endif %}
+        </div>
+        <p class="card-title done-title">{{ task.title }}</p>
+        {% if task.description %}<p class="card-desc">{{ task.description }}</p>{% endif %}
+        <div class="card-actions">
+          <form action="/tasks/{{ task.id }}/status" method="POST">
+            <input type="hidden" name="status" value="in_progress"/>
+            <button class="btn-back">← Back</button>
+          </form>
+          <button class="btn-edit" onclick="openEdit('{{ task.id }}','{{ task.title }}',`{{ task.description }}`,'{{ task.priority }}','{{ task.due_date or '' }}')">Edit</button>
+          <form action="/tasks/{{ task.id }}/delete" method="POST">
+            <button class="btn-delete">Delete</button>
+          </form>
+        </div>
+      </div>
+      {% else %}<p class="empty">Nothing completed yet</p>
+      {% endfor %}
+    </div>
+
+  </main>
+
+<script>
+function openEdit(id, title, desc, priority, dueDate) {
+  document.getElementById('edit-form').action = '/tasks/' + id + '/edit';
+  document.getElementById('edit-title').value = title;
+  document.getElementById('edit-description').value = desc;
+  document.getElementById('edit-priority').value = priority;
+  document.getElementById('edit-due-date').value = dueDate;
+  document.getElementById('edit-modal').style.display = 'flex';
+}
+
+function toggleTheme() {
+  const html = document.documentElement;
+  const btn = document.getElementById('theme-toggle');
+  if (html.getAttribute('data-theme') === 'dark') {
+    html.setAttribute('data-theme', 'light');
+    btn.textContent = '☾ Dark';
+    localStorage.setItem('theme', 'light');
+  } else {
+    html.setAttribute('data-theme', 'dark');
+    btn.textContent = '☀ Light';
+    localStorage.setItem('theme', 'dark');
+  }
+}
+
+// Restore saved theme
+const saved = localStorage.getItem('theme');
+if (saved === 'light') {
+  document.documentElement.setAttribute('data-theme', 'light');
+  document.getElementById('theme-toggle').textContent = '☾ Dark';
+}
+</script>
+</body>
+</html>
