@@ -15,7 +15,10 @@ app = FastAPI(title="Nexus Board API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5000"],
+    allow_origins=[
+        "http://localhost:5000",
+        "https://nexus-board-ui.onrender.com"  # ← your actual Flask URL
+    ],
     allow_methods=["*"],
     allow_headers=["*"],
 )
