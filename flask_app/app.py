@@ -1,9 +1,7 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 import requests
 import os
 from dotenv import load_dotenv
-from google import genai
-from flask import jsonify
 
 load_dotenv()
 
