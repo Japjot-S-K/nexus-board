@@ -1,6 +1,6 @@
 # Nexus Board
 
-A full-stack kanban task management application built with Python, FastAPI, Flask, and MongoDB Atlas. Designed as a resume project to demonstrate real-world backend architecture, REST API design, cloud database connectivity, and frontend rendering across two separate deployed services.
+A full-stack kanban task management application built with Python, FastAPI, Flask, and MongoDB Atlas. Designed to demonstrate real-world backend architecture, REST API design, cloud database connectivity, and frontend rendering across two separate deployed services.
 
 ---
 
