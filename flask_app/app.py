@@ -2,6 +2,8 @@ from flask import Flask, render_template, request, redirect, url_for
 import requests
 import os
 from dotenv import load_dotenv
+from google import genai
+from flask import jsonify
 
 load_dotenv()
 
@@ -81,6 +83,44 @@ def delete_task(task_id):
     requests.delete(f"{FASTAPI_URL}/tasks/{task_id}")
     return redirect(url_for("index"))
 
+@app.route("/summarize", methods=["POST"])
+def summarize():
+    try:
+        response = requests.get(f"{FASTAPI_URL}/tasks")
+        tasks = response.json() if response.status_code == 200 else []
+
+        if not tasks:
+            return jsonify({"summary": "Your board is clear today — sounds like a great day to get ahead! 🎉"})
+
+        todo_tasks = [t for t in tasks if t["status"] == "todo"]
+        in_progress_tasks = [t for t in tasks if t["status"] == "in_progress"]
+        done_tasks = [t for t in tasks if t["status"] == "done"]
+        high_priority = [t for t in tasks if t["priority"] == "high"]
+
+        parts = []
+
+        if in_progress_tasks:
+            names = ", ".join(t["title"] for t in in_progress_tasks[:2])
+            parts.append(f"You're currently working on {names}")
+
+        if todo_tasks:
+            names = ", ".join(t["title"] for t in todo_tasks[:2])
+            parts.append(f"still need to tackle {names}")
+
+        if high_priority:
+            names = ", ".join(t["title"] for t in high_priority[:1])
+            parts.append(f"and {names} is marked high priority so don't let it slip!")
+
+        if done_tasks:
+            parts.append(f"You've already knocked out {len(done_tasks)} task(s) — nice work! 💪")
+
+        summary = ". ".join(parts) + "." if parts else "Looks like a packed day — take it one task at a time! 💪"
+
+        return jsonify({"summary": summary})
+
+    except Exception as e:
+        print("Summarize error:", e)
+        return jsonify({"summary": "Couldn't load your summary right now. You've got this though! 💪"})
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
