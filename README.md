@@ -2,6 +2,8 @@
 
 A full-stack kanban task management application built with Python, FastAPI, Flask, and MongoDB Atlas. Designed to demonstrate real-world backend architecture, REST API design, cloud database connectivity, and frontend rendering across two separate deployed services.
 
+🔗 **Live Demo:** [nexus-board-ui.onrender.com](https://nexus-board-ui.onrender.com)
+
 ---
 
 ## Screenshots
