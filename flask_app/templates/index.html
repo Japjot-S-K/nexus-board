@@ -47,6 +47,31 @@
     {% if search or priority %}
     <a href="/" class="clear-link">Clear</a>
     {% endif %}
+
+        <!-- AI Summarizer -->
+    <div class="summarizer-bar">
+      <div class="summarizer-left">
+        <span class="ai-icon">✦</span>
+        <span class="summarizer-text">What's in store for you today?</span>
+        <button type="button" class="btn-summarize" onclick="getSummary()">Find out with AI ✨</button>
+      </div>
+    </div>
+
+    <!-- Summary Modal -->
+    <div id="summary-modal" class="modal-overlay">
+      <div class="modal summary-modal">
+        <div class="summary-header">
+          <span class="ai-icon-lg">✦</span>
+          <h2>Your Day at a Glance</h2>
+        </div>
+        <div id="summary-content" class="summary-content">
+          <div class="summary-loading">Thinking...</div>
+        </div>
+        <div class="modal-actions">
+          <button onclick="document.getElementById('summary-modal').style.display='none'">Close</button>
+        </div>
+      </div>
+    </div>
   </form>
 
   <!-- Create task modal -->
@@ -196,34 +221,45 @@
   </main>
 
 <script>
-function openEdit(id, title, desc, priority, dueDate) {
-  document.getElementById('edit-form').action = '/tasks/' + id + '/edit';
-  document.getElementById('edit-title').value = title;
-  document.getElementById('edit-description').value = desc;
-  document.getElementById('edit-priority').value = priority;
-  document.getElementById('edit-due-date').value = dueDate;
-  document.getElementById('edit-modal').style.display = 'flex';
-}
-
-function toggleTheme() {
-  const html = document.documentElement;
-  const btn = document.getElementById('theme-toggle');
-  if (html.getAttribute('data-theme') === 'dark') {
-    html.setAttribute('data-theme', 'light');
-    btn.textContent = '☾ Dark';
-    localStorage.setItem('theme', 'light');
-  } else {
-    html.setAttribute('data-theme', 'dark');
-    btn.textContent = '☀ Light';
-    localStorage.setItem('theme', 'dark');
+  function openEdit(id, title, desc, priority, dueDate) {
+    document.getElementById('edit-form').action = '/tasks/' + id + '/edit';
+    document.getElementById('edit-title').value = title;
+    document.getElementById('edit-description').value = desc;
+    document.getElementById('edit-priority').value = priority;
+    document.getElementById('edit-due-date').value = dueDate;
+    document.getElementById('edit-modal').style.display = 'flex';
   }
-}
 
-// Restore saved theme
-const saved = localStorage.getItem('theme');
-if (saved === 'light') {
-  document.documentElement.setAttribute('data-theme', 'light');
-  document.getElementById('theme-toggle').textContent = '☾ Dark';
+  function toggleTheme() {
+    const html = document.documentElement;
+    const btn = document.getElementById('theme-toggle');
+    if (html.getAttribute('data-theme') === 'dark') {
+      html.setAttribute('data-theme', 'light');
+      btn.textContent = '☾ Dark';
+      localStorage.setItem('theme', 'light');
+    } else {
+      html.setAttribute('data-theme', 'dark');
+      btn.textContent = '☀ Light';
+      localStorage.setItem('theme', 'dark');
+    }
+  }
+
+  // Restore saved theme
+  const saved = localStorage.getItem('theme');
+  if (saved === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+    document.getElementById('theme-toggle').textContent = '☾ Dark';
+  }
+    async function getSummary() {
+    document.getElementById('summary-modal').style.display = 'flex';
+    document.getElementById('summary-content').innerHTML = '<div class="summary-loading">✦ Thinking about your day...</div>';
+    try {
+      const res = await fetch('/summarize', { method: 'POST' });
+      const data = await res.json();
+      document.getElementById('summary-content').innerHTML = `<p class="summary-text">${data.summary}</p>`;
+    } catch (e) {
+      document.getElementById('summary-content').innerHTML = '<p class="summary-text">Couldn\'t load summary. Try again!</p>';
+    }
 }
 </script>
 </body>
